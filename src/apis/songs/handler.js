@@ -24,7 +24,40 @@ class SongsHandler {
     return response;
   }
 
-  async getSongsHandler() {
+  async getSongsHandler(request) {
+    if (request.query.title && request.query.performer) {
+      const { title, performer } = request.query;
+      const songs = await this._service.getSongsByTitleAndPerformer(title, performer);
+      return {
+        status: 'success',
+        data: {
+          songs,
+        },
+      };
+    }
+
+    if (request.query.title) {
+      const { title } = request.query;
+      const songs = await this._service.getSongsByTitle(title);
+      return {
+        status: 'success',
+        data: {
+          songs,
+        },
+      };
+    }
+
+    if (request.query.performer) {
+      const { performer } = request.query;
+      const songs = await this._service.getSongsByPerformer(performer);
+      return {
+        status: 'success',
+        data: {
+          songs,
+        },
+      };
+    }
+
     const songs = await this._service.getSongs();
     return {
       status: 'success',
@@ -35,6 +68,17 @@ class SongsHandler {
   }
 
   async getSongByIdHandler(request) {
+    const { id } = request.params;
+    const song = await this._service.getSongById(id);
+    return {
+      status: 'success',
+      data: {
+        song,
+      },
+    };
+  }
+
+  async getSongsByTitleHandler(request) {
     const { id } = request.params;
     const song = await this._service.getSongById(id);
     return {

@@ -46,6 +46,48 @@ class SongsService {
     return result.rows.map(mapSongsDBToModel)[0];
   }
 
+  async getSongsByTitle(title) {
+    const query = {
+      text: 'SELECT song_id, title, performer FROM songs WHERE LOWER(title) LIKE \'%\' || $1 || \'%\'',
+      values: [title],
+    };
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Lagu tidak ditemukan');
+    }
+
+    return result.rows.map(mapSongsDBToModel);
+  }
+
+  async getSongsByPerformer(performer) {
+    const query = {
+      text: 'SELECT song_id, title, performer FROM songs WHERE LOWER(performer) LIKE \'%\' || $1 || \'%\'',
+      values: [performer],
+    };
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Lagu tidak ditemukan');
+    }
+
+    return result.rows.map(mapSongsDBToModel);
+  }
+
+  async getSongsByTitleAndPerformer(title, performer) {
+    const query = {
+      text: 'SELECT song_id, title, performer FROM songs WHERE LOWER(title) LIKE \'%\' || $1 || \'%\' AND LOWER(performer) LIKE \'%\' || $2 || \'%\'',
+      values: [title, performer],
+    };
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Lagu tidak ditemukan');
+    }
+
+    return result.rows.map(mapSongsDBToModel);
+  }
+
   async editSongById(id, {
     title, year, genre, performer, duration, albumId,
   }) {

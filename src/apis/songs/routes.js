@@ -7,13 +7,18 @@ const routes = (handler) => [
   {
     method: 'GET',
     path: '/songs',
-    handler: () => handler.getSongsHandler(),
+    handler: (request) => handler.getSongsHandler(request),
   },
   {
     method: 'GET',
     path: '/songs/{id}',
     handler: (request) => handler.getSongByIdHandler(request),
   },
+  // {
+  //   method: 'GET',
+  //   path: '/songs',
+  //   handler: (request) => handler.getSongsByTitleHandler(request),
+  // },
   {
     method: 'PUT',
     path: '/songs/{id}',
