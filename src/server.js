@@ -30,13 +30,13 @@ const init = async () => {
         validator: AlbumsValidator,
       },
     },
-    // {
-    //   plugin: songs,
-    //   options: {
-    //     service: songsService,
-    //     validator: SongsValidator,
-    //   },
-    // },
+    {
+      plugin: songs,
+      options: {
+        service: songsService,
+        validator: SongsValidator,
+      },
+    },
   ]);
 
   server.ext('onPreResponse', (request, h) => {
