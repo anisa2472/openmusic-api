@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantError');
@@ -26,8 +27,31 @@ class AlbumsService {
   }
 
   async getAlbumById(id) {
+    // check if there are songs in the album
+    const querySongs = {
+      text: 'SELECT song_id FROM songs WHERE album_id = $1;',
+      values: [id],
+    };
+    const resultSongsInAlbum = await this._pool.query(querySongs);
+
+    // there are no songs in the album
+    if (!resultSongsInAlbum.rows.length) {
+      const query = {
+        text: 'SELECT * FROM albums WHERE album_id = $1;',
+        values: [id],
+      };
+      const result = await this._pool.query(query);
+
+      if (!result.rows.length) {
+        throw new NotFoundError('Album tidak ditemukan.');
+      }
+
+      return { ...result.rows.map(mapAlbumDBToModel)[0], songs: [] };
+    }
+
+    // there are songs in the album
     const query = {
-      text: 'SELECT * FROM albums WHERE album_id = $1',
+      text: 'SELECT a.*, b.song_id, b.title, b.performer FROM songs b LEFT JOIN albums a ON a.album_id = b.album_id WHERE a.album_id = $1 AND b.album_id = $1;',
       values: [id],
     };
     const result = await this._pool.query(query);
@@ -36,7 +60,11 @@ class AlbumsService {
       throw new NotFoundError('Album tidak ditemukan.');
     }
 
-    return result.rows.map(mapAlbumDBToModel)[0];
+    const listOfSongs = result.rows.map(
+      ({ song_id, title, performer }) => ({ id: song_id, title, performer }),
+    );
+
+    return { ...result.rows.map(mapAlbumDBToModel)[0], songs: listOfSongs };
   }
 
   async editAlbumById(id, { name, year }) {
