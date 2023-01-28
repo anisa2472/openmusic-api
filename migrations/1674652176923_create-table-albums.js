@@ -18,5 +18,5 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
-  pgm.dropTable('album');
+  pgm.dropTable('albums');
 };
