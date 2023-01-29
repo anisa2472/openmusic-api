@@ -14,11 +14,6 @@ const routes = (handler) => [
     path: '/songs/{id}',
     handler: (request) => handler.getSongByIdHandler(request),
   },
-  // {
-  //   method: 'GET',
-  //   path: '/songs',
-  //   handler: (request) => handler.getSongsByTitleHandler(request),
-  // },
   {
     method: 'PUT',
     path: '/songs/{id}',
