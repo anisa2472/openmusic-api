@@ -40,13 +40,13 @@ class AlbumsService {
         text: 'SELECT * FROM albums WHERE album_id = $1;',
         values: [id],
       };
-      const result = await this._pool.query(query);
+      const { rows, rowCount } = await this._pool.query(query);
 
-      if (!result.rows.length) {
+      if (!rowCount) {
         throw new NotFoundError('Album tidak ditemukan.');
       }
 
-      return { ...result.rows.map(mapAlbumDBToModel)[0], songs: [] };
+      return { ...rows.map(mapAlbumDBToModel)[0], songs: [] };
     }
 
     // there are songs in the album
@@ -54,17 +54,17 @@ class AlbumsService {
       text: 'SELECT a.*, b.song_id, b.title, b.performer FROM songs b LEFT JOIN albums a ON a.album_id = b.album_id WHERE a.album_id = $1 AND b.album_id = $1;',
       values: [id],
     };
-    const result = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(query);
 
-    if (!result.rows.length) {
+    if (!rowCount) {
       throw new NotFoundError('Album tidak ditemukan.');
     }
 
-    const listOfSongs = result.rows.map(
+    const listOfSongs = rows.map(
       ({ song_id, title, performer }) => ({ id: song_id, title, performer }),
     );
 
-    return { ...result.rows.map(mapAlbumDBToModel)[0], songs: listOfSongs };
+    return { ...rows.map(mapAlbumDBToModel)[0], songs: listOfSongs };
   }
 
   async editAlbumById(id, { name, year }) {
@@ -72,10 +72,10 @@ class AlbumsService {
       text: 'UPDATE albums SET name = $1, year = $2 WHERE album_id = $3 RETURNING album_id',
       values: [name, year, id],
     };
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rows.length) {
-      throw new NotFoundError('Gagal memperbarui album.');
+    if (!rowCount) {
+      throw new NotFoundError('Gagal memperbarui album. Id tidak ditemukan.');
     }
   }
 
@@ -84,9 +84,9 @@ class AlbumsService {
       text: 'DELETE FROM albums WHERE album_id = $1 RETURNING album_id',
       values: [id],
     };
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rows.length) {
+    if (!rowCount) {
       throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan.');
     }
   }
