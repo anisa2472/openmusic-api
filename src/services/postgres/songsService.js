@@ -28,8 +28,8 @@ class SongsService {
   }
 
   async getSongs() {
-    const result = await this._pool.query('SELECT song_id, title, performer FROM songs');
-    return result.rows.map(mapSongsDBToModel);
+    const result = await this._pool.query('SELECT song_id as id, title, performer FROM songs');
+    return result.rows;
   }
 
   async getSongById(id) {
@@ -37,13 +37,13 @@ class SongsService {
       text: 'SELECT * FROM songs WHERE song_id = $1',
       values: [id],
     };
-    const result = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(query);
 
-    if (!result.rows.length) {
+    if (!rowCount) {
       throw new NotFoundError('Lagu tidak ditemukan');
     }
 
-    return result.rows.map(mapSongsDBToModel)[0];
+    return rows.map(mapSongsDBToModel)[0];
   }
 
   async getSongsByTitle(title) {
