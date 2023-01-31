@@ -26,45 +26,31 @@ class AlbumsService {
     return rows[0].album_id;
   }
 
-  async getAlbumById(id) {
-    // check if there are songs in the album
-    const querySongs = {
-      text: 'SELECT song_id FROM songs WHERE album_id = $1;',
-      values: [id],
+  async getAlbumById(albumId) {
+    const queryAlbum = {
+      text: 'SELECT * FROM albums WHERE album_id = $1;',
+      values: [albumId],
     };
-    const resultSongsInAlbum = await this._pool.query(querySongs);
-
-    // there are no songs in the album
-    if (!resultSongsInAlbum.rows.length) {
-      const query = {
-        text: 'SELECT * FROM albums WHERE album_id = $1;',
-        values: [id],
-      };
-      const { rows, rowCount } = await this._pool.query(query);
-
-      if (!rowCount) {
-        throw new NotFoundError('Album tidak ditemukan.');
-      }
-
-      return { ...rows.map(mapAlbumDBToModel)[0], songs: [] };
-    }
-
-    // there are songs in the album
-    const query = {
-      text: 'SELECT a.*, b.song_id, b.title, b.performer FROM songs b LEFT JOIN albums a ON a.album_id = b.album_id WHERE a.album_id = $1 AND b.album_id = $1;',
-      values: [id],
-    };
-    const { rows, rowCount } = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(queryAlbum);
 
     if (!rowCount) {
       throw new NotFoundError('Album tidak ditemukan.');
     }
 
-    const listOfSongs = rows.map(
-      ({ song_id, title, performer }) => ({ id: song_id, title, performer }),
-    );
+    // check if there are songs in the album
+    const querySongs = {
+      text: 'SELECT s.song_id as id, s.title, s.performer FROM songs s LEFT JOIN albums a ON s.album_id = a.album_id WHERE s.album_id = $1;',
+      values: [albumId],
+    };
+    const resultSongsInAlbum = await this._pool.query(querySongs);
 
-    return { ...rows.map(mapAlbumDBToModel)[0], songs: listOfSongs };
+    // there are no songs in the album
+    if (!resultSongsInAlbum.rows.length) {
+      return { ...rows.map(mapAlbumDBToModel)[0], songs: [] };
+    }
+
+    // there are songs in the album
+    return { ...rows.map(mapAlbumDBToModel)[0], songs: resultSongsInAlbum.rows };
   }
 
   async editAlbumById(id, { name, year }) {
