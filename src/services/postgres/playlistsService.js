@@ -130,6 +130,15 @@ class PlaylistsService {
       throw new AuthorizationError('Anda tidak berhak mengakses resource ini.');
     }
   }
+
+  async addToActivity(playlistId, songId, credentialId, action, time) {
+    const id = `activity-${nanoid(16)}`;
+    const query = {
+      text: 'INSERT INTO playlist_activities VALUES($1, $2, $3, $4, $5, $6) RETURNING id',
+      values: [id, playlistId, songId, credentialId, action, time],
+    };
+    await this._pool.query(query);
+  }
 }
 
 module.exports = { PlaylistsService };
