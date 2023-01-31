@@ -1,3 +1,4 @@
+/* eslint-disable no-tabs */
 const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 
@@ -6,8 +7,9 @@ const NotFoundError = require('../../exceptions/NotFoundError');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsService {
-  constructor() {
+  constructor(collaborationsService) {
     this._pool = new Pool();
+    this._collaborationsService = collaborationsService;
   }
 
   async addPlaylist({ name, owner }) {
@@ -44,7 +46,7 @@ class PlaylistsService {
 
   async getAllPlaylists(userId) {
     const query = {
-      text: 'SELECT p.playlist_id as id, name, u.username FROM playlists p LEFT JOIN users u ON p.owner = u.user_id WHERE p.owner = $1 AND u.user_id = $1',
+      text: 'SELECT p.playlist_id as id, p.name, u.username FROM playlists p LEFT JOIN users u ON p.owner = u.user_id LEFT JOIN collaborations c ON p.playlist_id = c.playlist_id WHERE p.owner = $1 OR c.user_id = $1',
       values: [userId],
     };
     const { rows } = await this._pool.query(query);
@@ -52,10 +54,10 @@ class PlaylistsService {
     return rows;
   }
 
-  async getPlaylistSongsById(userId, playlistId) {
+  async getPlaylistSongsById(playlistId) {
     const queryPlaylist = {
-      text: 'SELECT p.playlist_id as id, name, u.username FROM playlists p LEFT JOIN users u ON p.owner = u.user_id WHERE p.owner = $1 AND u.user_id = $1 AND p.playlist_id = $2',
-      values: [userId, playlistId],
+      text: 'SELECT p.playlist_id as id, p.name, u.username FROM playlists p LEFT JOIN playlist_songs ps ON p.playlist_id = ps.playlist_id LEFT JOIN users u ON p.owner = u.user_id WHERE p.playlist_id = $1',
+      values: [playlistId],
     };
     const { rows, rowCount } = await this._pool.query(queryPlaylist);
 
@@ -121,13 +123,28 @@ class PlaylistsService {
     };
     const result = await this._pool.query(query);
     if (!result.rows.length) {
-      throw new NotFoundError('Playlist tidak ditemukan');
+      throw new NotFoundError('Playlist tidak ditemukan.');
     }
 
     const playlist = result.rows[0];
 
     if (playlist.owner !== owner) {
       throw new AuthorizationError('Anda tidak berhak mengakses resource ini.');
+    }
+  }
+
+  async verifyPlaylistAccess(playlistId, userId) {
+    try {
+      await this.verifyPlaylistOwner(playlistId, userId);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      try {
+        await this._collaborationsService.verifyCollaborator(playlistId, userId);
+      } catch {
+        throw error;
+      }
     }
   }
 

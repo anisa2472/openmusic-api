@@ -17,13 +17,13 @@ class AlbumsService {
       values: [id, name, year],
     };
 
-    const result = await this._pool.query(query);
+    const { rows } = await this._pool.query(query);
 
-    if (!result.rows[0].album_id) {
+    if (!rows[0].album_id) {
       throw new InvariantError('Album gagal ditambahkan.');
     }
 
-    return result.rows[0].album_id;
+    return rows[0].album_id;
   }
 
   async getAlbumById(id) {
