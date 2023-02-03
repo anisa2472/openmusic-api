@@ -11,6 +11,9 @@ const config = {
   rabbitmq: {
     service: process.env.RABBITMQ_SERVICE,
   },
+  redis: {
+    server: process.env.REDIS_SERVER,
+  },
 };
 
 module.exports = config;

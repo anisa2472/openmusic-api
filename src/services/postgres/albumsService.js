@@ -6,8 +6,9 @@ const NotFoundError = require('../../exceptions/NotFoundError');
 const { mapAlbumDBToModel } = require('../../utils');
 
 class AlbumsService {
-  constructor() {
+  constructor(cacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
   }
 
   async addAlbum({ name, year, coverAlbum = null }) {
@@ -82,16 +83,18 @@ class AlbumsService {
     }
   }
 
-  async deleteAlbumById(id) {
+  async deleteAlbumById(albumId) {
     const query = {
       text: 'DELETE FROM albums WHERE album_id = $1 RETURNING album_id',
-      values: [id],
+      values: [albumId],
     };
     const { rowCount } = await this._pool.query(query);
 
     if (!rowCount) {
       throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan.');
     }
+
+    await this._cacheService.delete(`likes:${albumId}`);
   }
 
   async addAlbumLike(albumId, userId) {
@@ -105,6 +108,8 @@ class AlbumsService {
     if (!rows[0].id) {
       throw new InvariantError('Gagal menyukai album.');
     }
+
+    await this._cacheService.delete(`likes:${albumId}`);
   }
 
   async deleteAlbumLike(albumId, userId) {
@@ -117,15 +122,30 @@ class AlbumsService {
     if (!rows[0].id) {
       throw new InvariantError('Gagal batal menyukai album.');
     }
+
+    await this._cacheService.delete(`likes:${albumId}`);
   }
 
   async getAlbumLikesById(albumId) {
-    const query = {
-      text: 'SELECT COUNT(album_id) FROM album_likes WHERE album_id = $1 GROUP BY album_id',
-      values: [albumId],
-    };
-    const { rows } = await this._pool.query(query);
-    return parseInt(rows[0].count, 10);
+    try {
+      const result = await this._cacheService.get(`likes:${albumId}`);
+      return ({
+        isCache: true,
+        likeCount: JSON.parse((result)),
+      });
+    } catch (error) {
+      const query = {
+        text: 'SELECT COUNT(album_id) FROM album_likes WHERE album_id = $1 GROUP BY album_id',
+        values: [albumId],
+      };
+      const { rows } = await this._pool.query(query);
+
+      await this._cacheService.set(`likes:${albumId}`, JSON.stringify(parseInt(rows[0].count, 10)));
+      return ({
+        isCache: false,
+        likeCount: parseInt(rows[0].count, 10),
+      });
+    }
   }
 
   async searchAlbumById(albumId) {
