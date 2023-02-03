@@ -7,6 +7,14 @@ const routes = (handler) => [
     handler: (request, h) => handler.postAlbumHandler(request, h),
   },
   {
+    method: 'POST',
+    path: '/albums/{id}/likes',
+    handler: (request, h) => handler.postAlbumLikesByIdHandler(request, h),
+    options: {
+      auth: 'openmusic_jwt',
+    },
+  },
+  {
     method: 'GET',
     path: '/albums/{id}',
     handler: (request) => handler.getAlbumByIdHandler(request),
@@ -19,6 +27,11 @@ const routes = (handler) => [
         path: path.join(__dirname, '/../uploads/file/images'),
       },
     },
+  },
+  {
+    method: 'GET',
+    path: '/albums/{id}/likes',
+    handler: (request) => handler.getAlbumLikesByIdHandler(request),
   },
   {
     method: 'PUT',
