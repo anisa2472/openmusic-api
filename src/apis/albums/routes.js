@@ -1,3 +1,5 @@
+const path = require('path');
+
 const routes = (handler) => [
   {
     method: 'POST',
@@ -8,6 +10,15 @@ const routes = (handler) => [
     method: 'GET',
     path: '/albums/{id}',
     handler: (request) => handler.getAlbumByIdHandler(request),
+  },
+  {
+    method: 'GET',
+    path: '/albums/cover/{param*}',
+    handler: {
+      directory: {
+        path: path.join(__dirname, '/../uploads/file/images'),
+      },
+    },
   },
   {
     method: 'PUT',
